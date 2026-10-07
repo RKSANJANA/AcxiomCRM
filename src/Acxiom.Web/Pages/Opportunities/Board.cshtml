@@ -1,0 +1,42 @@
+@page
+@model Acxiom.Web.Pages.Opportunities.BoardModel
+@{ ViewData["Title"] = "Pipeline"; }
+
+<div class="page-head">
+    <div>
+        <h1 class="mb-0">Pipeline</h1>
+        <div class="text-muted small">@Model.Deals.Count open · @Model.Deals.Sum(d => d.Amount).Inr() total · @Model.Deals.Sum(d => d.Weighted).Inr() weighted</div>
+    </div>
+    @if (Model.Owners.Count > 0)
+    {
+        <form method="get" class="filters mb-0 p-2">
+            <select name="owner" class="form-select form-select-sm" asp-items="Lists.Of(Model.Owners, Model.Owner)" aria-label="Owner"><option value="">Everyone</option></select>
+        </form>
+    }
+</div>
+
+<div class="board">
+    @foreach (var stage in new[] { Stage.Qualification, Stage.Proposal, Stage.Negotiation })
+    {
+        var cards = Model.Deals.Where(d => d.Stage == stage).ToList();
+        <section>
+            <div class="d-flex justify-content-between mb-2">
+                <strong>@stage</strong>
+                <span class="small text-muted">@cards.Count · @cards.Sum(c => c.Amount).Inr()</span>
+            </div>
+            @foreach (var d in cards)
+            {
+                <div class="col-card">
+                    <a asp-page="Details" asp-route-id="@d.Id" class="fw-semibold small">@d.Name</a>
+                    <div class="small text-muted">@d.CustomerName</div>
+                    <div class="d-flex justify-content-between small mt-1">
+                        <span>@d.Amount.Inr() · @d.Probability%</span>
+                        <span class="@(d.ExpectedCloseDate < DateTime.Today ? "text-danger" : "text-muted")">@d.ExpectedCloseDate.ToString("d MMM")</span>
+                    </div>
+                    <div class="small text-muted">@d.OwnerName</div>
+                </div>
+            }
+            @if (cards.Count == 0) { <div class="small text-muted">Nothing here.</div> }
+        </section>
+    }
+</div>

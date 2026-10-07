@@ -1,0 +1,51 @@
+@page
+@model Acxiom.Web.Pages.Admin.Users.IndexModel
+@{ ViewData["Title"] = "Users"; }
+
+<div class="page-head">
+    <h1>Users</h1>
+    <a asp-page="Edit" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add user</a>
+</div>
+
+<form method="get" class="filters row g-2 align-items-center">
+    <div class="col-md-4"><input name="Q" value="@Model.Q" class="form-control" placeholder="Name or email" aria-label="Search" /></div>
+    <div class="col-md-3">
+        <select name="Role" class="form-select" aria-label="Role">
+            <option value="">All roles</option>
+            @foreach (var r in Roles.All) { <option value="@r" selected="@(Model.Role == r)">@Roles.Label(r)</option> }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="State" class="form-select" aria-label="State">
+            <option value="">Any state</option>
+            <option value="active" selected="@(Model.State == "active")">Active</option>
+            <option value="inactive" selected="@(Model.State == "inactive")">Disabled</option>
+            <option value="locked" selected="@(Model.State == "locked")">Locked out</option>
+        </select>
+    </div>
+    <div class="col-md-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+<div class="table-wrap">
+    <table class="table table-hover grid align-middle">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Team</th><th>Status</th><th>Since</th></tr></thead>
+        <tbody>
+        @foreach (var u in Model.Users)
+        {
+            <tr>
+                <td><a asp-page="Edit" asp-route-id="@u.Id" class="fw-semibold">@u.FullName</a></td>
+                <td>@u.Email</td>
+                <td>@Roles.Label(u.Role)</td>
+                <td>@(u.TeamName ?? "-")</td>
+                <td>
+                    <status-pill value="@(u.IsActive ? "Active" : "Disabled")" />
+                    @if (u.LockedOut) { <status-pill value="@("Locked")" /> }
+                    else if (u.FailedLogins > 0) { <span class="small text-muted">@u.FailedLogins failed</span> }
+                </td>
+                <td class="small">@u.CreatedAt.Day()</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+<p class="small text-muted mt-2">@Model.Users.Count user(s)</p>

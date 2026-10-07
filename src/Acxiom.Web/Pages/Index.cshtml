@@ -1,0 +1,182 @@
+@page
+@model IndexModel
+@using Acxiom.Application.Dashboard
+@{
+    ViewData["Title"] = "Dashboard";
+    var d = Model.Data;
+    var tiles = new (string Label, string Value, string Icon, string? Link)[]
+    {
+        ("Total customers", d.Customers.ToString(), "people", "/Customers"),
+        ("Total leads", d.Leads.ToString(), "person-plus", "/Leads"),
+        ("Open leads", d.OpenLeads.ToString(), "hourglass-split", "/Leads"),
+        ("Total opportunities", d.Opportunities.ToString(), "briefcase", "/Opportunities"),
+        ("Open opportunities", d.OpenOpportunities.ToString(), "folder2-open", "/Opportunities?Status=Open"),
+        ("Won", d.Won.ToString(), "trophy", "/Opportunities?Status=Won"),
+        ("Lost", d.Lost.ToString(), "x-circle", "/Opportunities?Status=Lost"),
+        ("Pipeline value", d.PipelineValue.Inr(), "currency-rupee", "/Opportunities/Board"),
+    };
+}
+
+<div class="page-head">
+    <div>
+        <h1 class="mb-0">Dashboard</h1>
+        <div class="text-muted small">@Model.Scope · @d.PeriodText</div>
+    </div>
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center" id="periodForm">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+            @foreach (var p in new[] { Period.All, Period.Today, Period.Week, Period.Month, Period.Custom })
+            {
+                <input type="radio" class="btn-check" name="Period" id="p@(p)" value="@p" checked="@(Model.Period == p)" />
+                <label class="btn btn-outline-primary" for="p@(p)">@(p switch { Period.All => "All", Period.Week => "This week", Period.Month => "This month", _ => p.ToString() })</label>
+            }
+        </div>
+        <span id="customDates" class="d-flex gap-1 @(Model.Period == Period.Custom ? "" : "d-none")">
+            <input type="date" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" aria-label="From" />
+            <input type="date" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" aria-label="To" />
+            <button class="btn btn-sm btn-primary">Go</button>
+        </span>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    @foreach (var t in tiles)
+    {
+        <div class="col-6 col-md-3">
+            <a href="@t.Link" class="text-decoration-none text-body">
+                <div class="stat">
+                    <div class="d-flex justify-content-between">
+                        <span class="lbl">@t.Label</span>
+                        <i class="bi bi-@t.Icon text-primary"></i>
+                    </div>
+                    <div class="num">@t.Value</div>
+                </div>
+            </a>
+        </div>
+    }
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="panel h-100">
+            <h2 class="h6">Leads by status</h2>
+            <div style="height:260px"><canvas id="leadChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="panel h-100">
+            <h2 class="h6">Opportunity pipeline <small class="text-muted fw-normal">· weighted open value @d.WeightedPipeline.Inr()</small></h2>
+            <div style="height:260px"><canvas id="pipeChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="panel">
+            <h2 class="h6">Monthly sales</h2>
+            <div style="height:240px"><canvas id="salesChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="@(Model.ShowTeam ? "col-lg-6" : "col-12")">
+        <div class="panel h-100">
+            <div class="d-flex justify-content-between">
+                <h2 class="h6">Follow-ups to do</h2>
+                <span class="small">
+                    <span class="text-muted">@d.PendingFollowUps pending</span>
+                    @if (d.OverdueFollowUps > 0) { <a asp-page="/FollowUps/Index" asp-route-Due="overdue" class="text-danger ms-2">@d.OverdueFollowUps overdue</a> }
+                </span>
+            </div>
+            @if (Model.NextUp.Count == 0)
+            {
+                <p class="text-muted small mb-0">All caught up.</p>
+            }
+            <ul class="list-unstyled mb-0">
+                @foreach (var f in Model.NextUp)
+                {
+                    <li class="py-2 border-bottom">
+                        <a asp-page="/FollowUps/Details" asp-route-id="@f.Id">@f.Subject</a>
+                        <span class="small text-muted">· @f.TargetName</span>
+                        <div class="small @(f.Overdue ? "text-danger" : "text-muted")">@f.DueAt.Stamp() · @f.OwnerName</div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+    @if (Model.ShowTeam)
+    {
+        <div class="col-lg-6">
+            <div class="panel h-100">
+                <h2 class="h6">By salesperson</h2>
+                <table class="table table-sm mb-0">
+                    <thead><tr class="small text-muted"><th>Name</th><th class="text-end">Open</th><th class="text-end">Pipeline</th><th class="text-end">Won</th><th class="text-end">To do</th></tr></thead>
+                    <tbody>
+                    @foreach (var o in d.ByOwner)
+                    {
+                        <tr><td>@o.Name</td><td class="text-end">@o.OpenDeals</td><td class="text-end">@o.Pipeline.Inr()</td><td class="text-end">@o.Won.Inr()</td><td class="text-end">@o.Planned</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@if (Model.Security != null)
+{
+    var s = Model.Security;
+    <div class="panel mt-3">
+        <h2 class="h6">Security</h2>
+        <div class="row text-center small">
+            <div class="col"><div class="fs-5 fw-bold">@s.ActiveUsers / @s.Users</div>active users</div>
+            <div class="col"><div class="fs-5 fw-bold @(s.LockedUsers > 0 ? "text-danger" : "")">@s.LockedUsers</div>locked out</div>
+            <div class="col"><div class="fs-5 fw-bold">@s.FailedLoginsToday</div>failed logins today</div>
+            <div class="col"><a asp-page="/Admin/Audit">Open audit log →</a></div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    document.querySelectorAll('input[name=Period]').forEach(r => r.addEventListener('change', () => {
+        if (r.value === 'Custom') document.getElementById('customDates').classList.remove('d-none');
+        else document.getElementById('periodForm').submit();
+    }));
+
+    const leads = @Json.Serialize(d.LeadsByStatus), pipe = @Json.Serialize(d.PipelineByStage), sales = @Json.Serialize(d.MonthlySales);
+    const rupee = v => '₹' + Number(v).toLocaleString('en-IN');
+
+    if (window.Chart) {
+        new Chart(leadChart, {
+            type: 'pie',
+            data: { labels: leads.labels, datasets: [{ data: leads.series[0].values, backgroundColor: ['#60a5fa', '#818cf8', '#fbbf24', '#d1d5db', '#34d399', '#f87171'] }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+
+        new Chart(pipeChart, {
+            type: 'bar',
+            data: {
+                labels: pipe.labels,
+                datasets: [{ label: 'Amount', data: pipe.series[0].values, backgroundColor: '#6366f1', borderRadius: 4 }]
+            },
+            options: {
+                indexAxis: 'y', maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => rupee(c.raw) + ' (' + pipe.series[1].values[c.dataIndex] + ' deals)' } } },
+                scales: { x: { ticks: { callback: rupee } } }
+            }
+        });
+
+        new Chart(salesChart, {
+            type: 'line',
+            data: {
+                labels: sales.labels,
+                datasets: [
+                    { label: 'Won', data: sales.series[0].values, borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.1)', fill: true, tension: .3 },
+                    { label: 'Lost', data: sales.series[1].values, borderColor: '#dc2626', borderDash: [4, 4], tension: .3 }
+                ]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: rupee } } } }
+        });
+    }
+</script>
+}

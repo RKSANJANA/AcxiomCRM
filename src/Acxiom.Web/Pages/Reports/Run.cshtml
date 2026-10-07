@@ -1,0 +1,91 @@
+@page "{slug}"
+@model Acxiom.Web.Pages.Reports.RunModel
+@using Acxiom.Application.Reports
+@{
+    ViewData["Title"] = Model.Report.Title;
+    var opt = Model.Report.OptionFilter;
+    string Show(object? v, ColumnKind kind) => v switch
+    {
+        null => "",
+        decimal m when kind == ColumnKind.Money => m.Inr(),
+        DateTime d => d.TimeOfDay == TimeSpan.Zero ? d.Day() : d.Stamp(),
+        _ => Acxiom.Web.Pages.Reports.RunModel.Text(v)
+    };
+}
+
+<div class="page-head">
+    <div>
+        <a asp-page="Index" class="small">← Reports</a>
+        <h1 class="mb-0">@Model.Report.Title</h1>
+        <div class="small text-muted">@Model.Report.Summary</div>
+    </div>
+    <a class="btn btn-outline-success" href="@(Url.Page("Run", "Csv", new { slug = Model.Report.Slug }) + "&" + Request.QueryString.Value?.TrimStart('?'))"><i class="bi bi-download"></i> CSV</a>
+</div>
+
+<form method="get" class="filters row g-2 align-items-center">
+    <div class="col-md-3"><input name="Q" value="@Model.Q" class="form-control" placeholder="Search in results…" aria-label="Search" /></div>
+    <div class="col-md-2"><input type="date" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From" title="From" /></div>
+    <div class="col-md-2"><input type="date" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To" title="To" /></div>
+    @if (opt != null)
+    {
+        <div class="col-md-2">
+            <select name="Option" class="form-select" aria-label="@opt.Value.Label">
+                <option value="">Any @opt.Value.Label.ToLower()</option>
+                @foreach (var v in opt.Value.Values) { <option value="@v" selected="@(Model.Option == v)">@StatusPillTagHelper.Spaced(v)</option> }
+            </select>
+        </div>
+    }
+    @if (Model.Owners.Count > 0 && Model.Report.Slug != "audit")
+    {
+        <div class="col-md-2"><select name="Owner" class="form-select" asp-items="Lists.Of(Model.Owners, Model.Owner)" aria-label="User"><option value="">Anyone</option></select></div>
+    }
+    <div class="col-md-auto"><button class="btn btn-outline-secondary">Apply</button></div>
+</form>
+
+@if (Model.Table.Totals.Count > 0)
+{
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        @foreach (var t in Model.Table.Totals)
+        {
+            <div class="stat py-2 px-3" style="height:auto"><div class="lbl">@t.Label</div><div class="fw-bold">@t.Value</div></div>
+        }
+    </div>
+}
+
+<div class="table-wrap">
+    <table class="table table-sm table-hover grid align-middle">
+        <thead>
+        <tr>
+            @for (var i = 0; i < Model.Table.Columns.Count; i++)
+            {
+                var c = Model.Table.Columns[i];
+                <th sort="@i" class="@(c.Kind is ColumnKind.Money or ColumnKind.Number ? "text-end" : "")">@c.Header</th>
+            }
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var row in Model.Rows)
+        {
+            <tr>
+                @for (var i = 0; i < row.Length; i++)
+                {
+                    var kind = Model.Table.Columns[i].Kind;
+                    if (kind == ColumnKind.Badge)
+                    {
+                        <td><status-pill value="@row[i]" /></td>
+                    }
+                    else
+                    {
+                        <td class="@(kind is ColumnKind.Money or ColumnKind.Number ? "text-end" : "")">@Show(row[i], kind)</td>
+                    }
+                }
+            </tr>
+        }
+        @if (Model.Total == 0)
+        {
+            <tr><td colspan="@Model.Table.Columns.Count" class="text-center text-muted py-4">No data for these filters.</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pager" model="(Model.PageNumber, Model.Pages, Model.Total)" />

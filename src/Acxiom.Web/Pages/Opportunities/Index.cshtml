@@ -1,0 +1,60 @@
+@page
+@model Acxiom.Web.Pages.Opportunities.IndexModel
+@{ ViewData["Title"] = "Opportunities"; var f = Model.Filter; }
+
+<div class="page-head">
+    <h1>Opportunities</h1>
+    <div class="d-flex gap-2">
+        <a asp-page="Board" class="btn btn-outline-primary"><i class="bi bi-kanban"></i> Board</a>
+        <a asp-page="Edit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New opportunity</a>
+    </div>
+</div>
+
+<form method="get" class="filters row g-2 align-items-center">
+    <div class="col-md-4"><input name="Q" value="@f.Q" class="form-control" placeholder="Search opportunity or customer…" aria-label="Search" /></div>
+    <div class="col-md-2"><select name="Stage" class="form-select" asp-items="Lists.Of(f.Stage)" aria-label="Stage"><option value="">Any stage</option></select></div>
+    <div class="col-md-2"><select name="Status" class="form-select" asp-items="Lists.Of(f.Status)" aria-label="Status"><option value="">Open + closed</option></select></div>
+    @if (Model.Owners.Count > 0)
+    {
+        <div class="col-md-3"><select name="Owner" class="form-select" asp-items="Lists.Of(Model.Owners, f.Owner)" aria-label="Owner"><option value="">Anyone</option></select></div>
+    }
+    <div class="col-md-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+<div class="table-wrap">
+    <table class="table table-hover grid align-middle">
+        <thead>
+        <tr>
+            <th sort="name">Opportunity</th>
+            <th>Customer</th>
+            <th sort="stage">Stage</th>
+            <th sort="amount" class="text-end">Amount</th>
+            <th sort="probability" class="text-end">Prob.</th>
+            <th class="text-end">Weighted</th>
+            <th sort="close">Close date</th>
+            <th>Owner</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var o in Model.Result.Items)
+        {
+            var late = o.Status == OpportunityStatus.Open && o.ExpectedCloseDate < DateTime.Today;
+            <tr>
+                <td><a asp-page="Details" asp-route-id="@o.Id" class="fw-semibold">@o.Name</a></td>
+                <td><a asp-page="/Customers/Details" asp-route-id="@o.CustomerId" class="link-secondary">@o.CustomerName</a></td>
+                <td><status-pill value="@o.Stage" /></td>
+                <td class="text-end">@o.Amount.Inr()</td>
+                <td class="text-end">@o.Probability%</td>
+                <td class="text-end text-muted">@o.Weighted.Inr()</td>
+                <td class="@(late ? "text-danger" : "")">@o.ExpectedCloseDate.Day()</td>
+                <td>@o.OwnerName</td>
+            </tr>
+        }
+        @if (Model.Result.Total == 0)
+        {
+            <tr><td colspan="8" class="text-center text-muted py-4">No opportunities match.</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pager" model="(Model.Result.Page, Model.Result.Pages, Model.Result.Total)" />

@@ -1,0 +1,53 @@
+@page
+@model Acxiom.Web.Pages.Activities.IndexModel
+@{ ViewData["Title"] = "Activities"; var f = Model.Filter; }
+
+<div class="page-head">
+    <h1>Activities</h1>
+    <div class="btn-group">
+        @foreach (var t in Enum.GetValues<ContactType>())
+        {
+            <a asp-page="Edit" asp-route-type="@t" class="btn btn-outline-primary btn-sm">+ @t</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="filters row g-2 align-items-center">
+    <div class="col-md-3"><input name="Q" value="@f.Q" class="form-control" placeholder="Search…" aria-label="Search" /></div>
+    <div class="col-md-2"><select name="Type" class="form-select" asp-items="Lists.Of(f.Type)" aria-label="Type"><option value="">Any type</option></select></div>
+    <div class="col-md-2"><select name="Status" class="form-select" asp-items="Lists.Of(f.Status)" aria-label="Status"><option value="">Any status</option></select></div>
+    <div class="col-md-2"><input type="date" name="From" value="@f.From?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From" /></div>
+    <div class="col-md-2"><input type="date" name="To" value="@f.To?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To" /></div>
+    @if (Model.Owners.Count > 0)
+    {
+        <div class="col-md-3"><select name="Owner" class="form-select" asp-items="Lists.Of(Model.Owners, f.Owner)" aria-label="User"><option value="">Anyone</option></select></div>
+    }
+    <div class="col-md-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+<div class="table-wrap">
+    <table class="table table-hover grid align-middle">
+        <thead><tr><th sort="when">When</th><th sort="type">Type</th><th sort="subject">Subject</th><th>Customer / lead</th><th>Status</th><th>By</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Result.Items)
+        {
+            <tr>
+                <td>@a.When.Stamp()</td>
+                <td>@a.Type</td>
+                <td><a asp-page="Edit" asp-route-id="@a.Id">@a.Subject</a></td>
+                <td>
+                    @if (a.CustomerId != null) { <a asp-page="/Customers/Details" asp-route-id="@a.CustomerId" class="link-secondary">@a.CustomerName</a> }
+                    @if (a.LeadId != null) { <a asp-page="/Leads/Details" asp-route-id="@a.LeadId" class="link-secondary">@a.LeadName</a> <span class="small text-muted">(lead)</span> }
+                </td>
+                <td><status-pill value="@a.Status" /></td>
+                <td>@a.OwnerName</td>
+            </tr>
+        }
+        @if (Model.Result.Total == 0)
+        {
+            <tr><td colspan="6" class="text-center text-muted py-4">No activities.</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pager" model="(Model.Result.Page, Model.Result.Pages, Model.Result.Total)" />

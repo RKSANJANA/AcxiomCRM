@@ -1,0 +1,71 @@
+@page "{id:int}"
+@model Acxiom.Web.Pages.Customers.DetailsModel
+@{ var c = Model.Customer; ViewData["Title"] = c.Name; }
+
+<div class="page-head">
+    <div>
+        <div class="small text-muted">@c.Code</div>
+        <h1 class="mb-0">@c.Name <status-pill value="@c.Status" /></h1>
+        <div class="text-muted">@c.Company</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-page="/Opportunities/Edit" asp-route-customerId="@c.Id" class="btn btn-sm btn-outline-primary">New opportunity</a>
+        <a asp-page="/FollowUps/Edit" asp-route-target="Customer" asp-route-targetId="@c.Id" class="btn btn-sm btn-outline-primary">Schedule follow-up</a>
+        <a asp-page="/Activities/Edit" asp-route-customerId="@c.Id" class="btn btn-sm btn-outline-primary">Log activity</a>
+        <a asp-page="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Edit</a>
+        @if (Model.Me.CanDelete)
+        {
+            <partial name="_DeleteButton" model='("Delete", "this customer")' />
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="panel">
+            <dl class="facts mb-0">
+                <dt>Email</dt><dd>@c.Email</dd>
+                <dt>Phone</dt><dd>@c.Phone</dd>
+                <dt>Address</dt><dd>@c.Address @(c.City != null ? ", " + c.City : "") @(c.State != null ? ", " + c.State : "")</dd>
+                <dt>Owner</dt><dd>@c.OwnerName</dd>
+                <dt>Added</dt><dd>@c.CreatedAt.Stamp()</dd>
+                @if (c.Notes != null) { <dt>Notes</dt><dd style="white-space:pre-line">@c.Notes</dd> }
+            </dl>
+        </div>
+        <partial name="_History" model="Model.History" />
+    </div>
+    <div class="col-lg-8">
+        <div class="panel">
+            <h2 class="h6">Opportunities</h2>
+            @if (Model.Deals.Count == 0) { <p class="small text-muted mb-0">None yet.</p> }
+            @foreach (var o in Model.Deals)
+            {
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <a asp-page="/Opportunities/Details" asp-route-id="@o.Id">@o.Name</a>
+                    <span><status-pill value="@o.Stage" /> <strong class="ms-2">@o.Amount.Inr()</strong></span>
+                </div>
+            }
+        </div>
+        <div class="panel">
+            <h2 class="h6">Follow-ups</h2>
+            @if (Model.FollowUps.Count == 0) { <p class="small text-muted mb-0">None scheduled.</p> }
+            @foreach (var f in Model.FollowUps)
+            {
+                <div class="d-flex justify-content-between border-bottom py-2">
+                    <span><a asp-page="/FollowUps/Details" asp-route-id="@f.Id">@f.Subject</a> <span class="small text-muted">@f.DueAt.Stamp()</span></span>
+                    <status-pill value="@(f.Overdue ? "Overdue" : f.Status.ToString())" />
+                </div>
+            }
+        </div>
+        <div class="panel">
+            <h2 class="h6">Recent activity</h2>
+            @if (Model.Activities.Count == 0) { <p class="small text-muted mb-0">Nothing logged.</p> }
+            @foreach (var a in Model.Activities)
+            {
+                <div class="border-bottom py-2 small">
+                    <strong>@a.Type</strong> · @a.Subject <span class="text-muted">· @a.When.Stamp() · @a.OwnerName</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+@page "{id:int?}"
+@model Acxiom.Web.Pages.Activities.EditModel
+@{ ViewData["Title"] = Model.Id == null ? "Log activity" : "Edit activity"; }
+
+<div class="page-head">
+    <h1 class="mb-0">@ViewData["Title"]</h1>
+    @if (Model.Id != null)
+    {
+        <partial name="_DeleteButton" model='("Delete", "this activity")' />
+    }
+</div>
+<form method="post" class="panel" novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label asp-for="Input.Type" class="form-label"></label>
+            <select asp-for="Input.Type" class="form-select" asp-items="Lists.Of(Model.Input.Type)"></select>
+        </div>
+        <div class="col-md-9">
+            <label asp-for="Input.Subject" class="form-label"></label>
+            <input asp-for="Input.Subject" class="form-control" />
+            <span asp-validation-for="Input.Subject"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.When" class="form-label"></label>
+            <input asp-for="Input.When" class="form-control" type="datetime-local" />
+            <span asp-validation-for="Input.When"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.Status" class="form-label"></label>
+            <select asp-for="Input.Status" class="form-select" asp-items="Lists.Of(Model.Input.Status)"></select>
+        </div>
+        @if (Model.Owners.Count > 0)
+        {
+            <div class="col-md-4">
+                <label asp-for="Input.OwnerId" class="form-label"></label>
+                <select asp-for="Input.OwnerId" class="form-select" asp-items="Lists.Of(Model.Owners, Model.Input.OwnerId)"></select>
+                <span asp-validation-for="Input.OwnerId"></span>
+            </div>
+        }
+        <div class="col-md-6">
+            <label asp-for="Input.CustomerId" class="form-label"></label>
+            <select asp-for="Input.CustomerId" class="form-select" asp-items="Lists.Of(Model.Customers, Model.Input.CustomerId)"><option value="">-</option></select>
+            <span asp-validation-for="Input.CustomerId"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.LeadId" class="form-label"></label>
+            <select asp-for="Input.LeadId" class="form-select" asp-items="Lists.Of(Model.Leads, Model.Input.LeadId)"><option value="">-</option></select>
+            <span asp-validation-for="Input.LeadId"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Input.Description" class="form-label"></label>
+            <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-primary">Save</button>
+        <a asp-page="Index" class="btn btn-link">Cancel</a>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,15 @@
+@model (string Handler, string What)
+@{ var id = "del" + Guid.NewGuid().ToString("N")[..6]; }
+<button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#@id"><i class="bi bi-trash"></i> Delete</button>
+<div class="modal fade" id="@id" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" asp-page-handler="@Model.Handler" class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Delete @Model.What?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">It will disappear from lists and reports. The change is kept in the audit log.</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Keep it</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>

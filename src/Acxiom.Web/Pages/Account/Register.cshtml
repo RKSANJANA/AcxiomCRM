@@ -1,0 +1,38 @@
+@page
+@model Acxiom.Web.Pages.Account.RegisterModel
+@{ ViewData["Title"] = "Register"; }
+
+<div class="auth-wrap">
+    <h1 class="text-center mb-1">Create an account</h1>
+    <p class="text-center text-muted small mb-4">New accounts get the Sales Executive role.</p>
+    <div class="panel">
+        <form method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label"></label>
+                <input asp-for="Input.FullName" class="form-control" autocomplete="name" />
+                <span asp-validation-for="Input.FullName"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Input.Email"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                <div class="form-text">8+ characters, with upper and lower case letters, a number and a symbol.</div>
+                <span asp-validation-for="Input.Password"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Confirm" class="form-label"></label>
+                <input asp-for="Input.Confirm" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.Confirm"></span>
+            </div>
+            <button class="btn btn-primary w-100">Register</button>
+        </form>
+    </div>
+    <p class="text-center small mt-3"><a asp-page="Login">Back to sign in</a></p>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

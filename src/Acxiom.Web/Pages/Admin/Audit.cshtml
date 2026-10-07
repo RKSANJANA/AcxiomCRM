@@ -1,0 +1,79 @@
+@page
+@model Acxiom.Web.Pages.Admin.AuditModel
+@{ ViewData["Title"] = "Audit log"; var f = Model.Filter; }
+
+<div class="page-head">
+    <div>
+        <h1 class="mb-0">Audit log</h1>
+        <div class="small text-muted">Read only. Rows can't be changed or deleted.</div>
+    </div>
+    <a asp-page="/Reports/Run" asp-route-slug="audit" class="btn btn-outline-secondary btn-sm">Audit report / CSV</a>
+</div>
+
+<form method="get" class="filters row g-2 align-items-center">
+    <div class="col-md-3"><input name="Q" value="@f.Q" class="form-control" placeholder="User, record id, note…" aria-label="Search" /></div>
+    <div class="col-md-2">
+        <select name="UserId" class="form-select" aria-label="User">
+            <option value="">Any user</option>
+            @foreach (var u in Model.Users) { <option value="@u.Id" selected="@(f.UserId == u.Id)">@u.FullName</option> }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="Entity" class="form-select" aria-label="Module">
+            <option value="">Any module</option>
+            @foreach (var e in AuditModel.Entities) { <option selected="@(f.Entity == e)">@e</option> }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="Act" class="form-select" aria-label="Action">
+            <option value="">Any action</option>
+            @foreach (var a in AuditModel.Actions) { <option selected="@(f.Act == a)">@a</option> }
+        </select>
+    </div>
+    <div class="col-md-auto">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="FailedOnly" value="true" id="failed" checked="@(f.FailedOnly == true)" />
+            <label class="form-check-label small" for="failed">Failures only</label>
+        </div>
+    </div>
+    <div class="col-md-2"><input type="date" name="From" value="@f.From?.ToString("yyyy-MM-dd")" class="form-control" aria-label="From" /></div>
+    <div class="col-md-2"><input type="date" name="To" value="@f.To?.ToString("yyyy-MM-dd")" class="form-control" aria-label="To" /></div>
+    <div class="col-md-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+<div class="table-wrap">
+    <table class="table table-sm grid align-middle">
+        <thead><tr><th>When</th><th>User</th><th>Action</th><th>Module</th><th>Record</th><th>Result</th><th>IP</th><th>Details</th></tr></thead>
+        <tbody>
+        @foreach (var e in Model.Result.Items)
+        {
+            var hasDiff = e.OldValue != null || e.NewValue != null;
+            <tr class="@(e.Succeeded ? "" : "table-warning")">
+                <td class="small text-nowrap">@e.CreatedDate.ToString("d MMM yy HH:mm:ss")</td>
+                <td class="small">@(e.UserName ?? "-")</td>
+                <td>@e.Action</td>
+                <td>@e.EntityName</td>
+                <td class="small">@(e.RecordId is { Length: > 10 } ? e.RecordId[..8] + "…" : e.RecordId)</td>
+                <td><status-pill value="@(e.Succeeded ? "OK" : "Failed")" /></td>
+                <td class="small">@e.IpAddress</td>
+                <td class="small">
+                    @e.Note
+                    @if (hasDiff)
+                    {
+                        <details>
+                            <summary class="text-primary">changes</summary>
+                            @if (e.OldValue != null) { <div><span class="text-muted">before:</span> <code>@e.OldValue</code></div> }
+                            @if (e.NewValue != null) { <div><span class="text-muted">after:</span> <code>@e.NewValue</code></div> }
+                        </details>
+                    }
+                </td>
+            </tr>
+        }
+        @if (Model.Result.Total == 0)
+        {
+            <tr><td colspan="8" class="text-center text-muted py-4">No entries.</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pager" model="(Model.Result.Page, Model.Result.Pages, Model.Result.Total)" />

@@ -1,0 +1,44 @@
+@page
+@inject Acxiom.Application.Users.IUserAdmin Admin
+@{
+    ViewData["Title"] = "Roles";
+    var counts = await Admin.RoleCountsAsync();
+    var matrix = new (string Area, string Admin, string Manager, string Sales)[]
+    {
+        ("Dashboard", "Everything + security panel", "Own + team", "Own"),
+        ("Customers / leads / opportunities", "All, incl. delete", "Own + team, incl. delete", "Own; no delete"),
+        ("Follow-ups & activities", "All", "Own + team", "Own (can cancel, not delete follow-ups)"),
+        ("Assign records to", "Any active user", "Self or team members", "Self only"),
+        ("Reports", "All 8", "All except Audit", "CRM reports, own data"),
+        ("Users, teams, roles", "Yes", "-", "-"),
+        ("Audit log", "Yes (read only)", "-", "-"),
+        ("REST API", "All endpoints", "Same scope as the site", "Same scope as the site"),
+    };
+}
+
+<h1>Roles &amp; permissions</h1>
+<div class="row g-3 mb-4">
+    @foreach (var r in Roles.All)
+    {
+        <div class="col-md-4">
+            <div class="stat">
+                <div class="lbl">@Roles.Label(r)</div>
+                <div class="num">@counts.GetValueOrDefault(r)</div>
+                <a asp-page="/Admin/Users/Index" asp-route-Role="@r" class="small">see users</a>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="table-wrap">
+    <table class="table grid mb-0">
+        <thead><tr><th></th><th>Admin</th><th>Manager</th><th>Sales Executive</th></tr></thead>
+        <tbody>
+        @foreach (var m in matrix)
+        {
+            <tr><td class="fw-semibold">@m.Area</td><td>@m.Admin</td><td>@m.Manager</td><td>@m.Sales</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+<p class="small text-muted mt-2">Every user has exactly one role. People who register themselves start as Sales Executives. The checks run on the server - hiding a menu item isn't the protection.</p>

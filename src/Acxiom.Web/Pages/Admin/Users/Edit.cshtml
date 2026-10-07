@@ -1,0 +1,90 @@
+@page "{id?}"
+@model Acxiom.Web.Pages.Admin.Users.EditModel
+@{ ViewData["Title"] = Model.Id == null ? "New user" : "Edit user"; var u = Model.Current; }
+
+<h1>@ViewData["Title"]</h1>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <form method="post" class="panel" novalidate autocomplete="off">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Input.FullName" class="form-label"></label>
+                    <input asp-for="Input.FullName" class="form-control" />
+                    <span asp-validation-for="Input.FullName"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control" inputmode="email" />
+                    <span asp-validation-for="Input.Email"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Role" class="form-label"></label>
+                    <select asp-for="Input.Role" class="form-select" disabled="@Model.IsMe">
+                        @foreach (var r in Roles.All) { <option value="@r">@Roles.Label(r)</option> }
+                    </select>
+                    @if (Model.IsMe) { <input type="hidden" asp-for="Input.Role" /> <div class="form-text">You can't change your own role.</div> }
+                    <span asp-validation-for="Input.Role"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.TeamId" class="form-label"></label>
+                    <select asp-for="Input.TeamId" class="form-select">
+                        <option value="">No team</option>
+                        @foreach (var t in Model.Teams) { <option value="@t.Id">@t.Name</option> }
+                    </select>
+                </div>
+                @if (Model.Id == null)
+                {
+                    <div class="col-md-6">
+                        <label asp-for="Input.Password" class="form-label"></label>
+                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="Input.Password"></span>
+                    </div>
+                }
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="Input.IsActive" class="form-check-input" disabled="@Model.IsMe" />
+                        <label asp-for="Input.IsActive" class="form-check-label"></label>
+                        @if (Model.IsMe) { <input type="hidden" name="Input.IsActive" value="true" /> }
+                    </div>
+                    <span asp-validation-for="Input.IsActive"></span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button class="btn btn-primary">Save</button>
+                <a asp-page="Index" class="btn btn-link">Back</a>
+            </div>
+        </form>
+    </div>
+
+    @if (u != null)
+    {
+        <div class="col-lg-5">
+            <div class="panel">
+                <h2 class="h6">Sign-in status</h2>
+                @if (u.LockedOut)
+                {
+                    <p class="text-danger mb-2">Locked until @u.LockoutEnd?.LocalDateTime.ToString("d MMM, h:mm tt")</p>
+                }
+                else
+                {
+                    <p class="mb-2">Not locked. @u.FailedLogins recent failed attempt(s).</p>
+                }
+                @if (u.LockedOut || u.FailedLogins > 0)
+                {
+                    <form method="post" asp-page-handler="Unlock"><button class="btn btn-sm btn-outline-success">Unlock &amp; reset counter</button></form>
+                }
+            </div>
+            <form method="post" asp-page-handler="Reset" class="panel" novalidate autocomplete="off">
+                <h2 class="h6">Reset password</h2>
+                <label asp-for="Reset.NewPassword" class="form-label small"></label>
+                <input asp-for="Reset.NewPassword" class="form-control mb-1" autocomplete="new-password" />
+                <span asp-validation-for="Reset.NewPassword"></span>
+                <div class="form-text mb-2">Tell the user over a safe channel. It isn't stored or logged in plain text.</div>
+                <button class="btn btn-sm btn-warning">Set password</button>
+            </form>
+        </div>
+    }
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

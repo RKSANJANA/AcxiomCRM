@@ -1,0 +1,56 @@
+@page "{id:int?}"
+@model Acxiom.Web.Pages.FollowUps.EditModel
+@{ ViewData["Title"] = Model.Id == null ? "Schedule follow-up" : "Edit follow-up"; }
+
+<h1>@ViewData["Title"]</h1>
+<form method="post" class="panel" novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label asp-for="Input.Target" class="form-label"></label>
+            @if (Model.Id == null)
+            {
+                <select asp-for="Input.Target" class="form-select" asp-items="Model.Targets" data-val="true" data-val-required="Pick what this follow-up is for.">
+                    <option value="">Choose a customer, lead or opportunity…</option>
+                </select>
+                <span asp-validation-for="Input.Target"></span>
+            }
+            else
+            {
+                <input class="form-control" value="@Model.TargetLabel" readonly />
+            }
+        </div>
+        <div class="col-md-8">
+            <label asp-for="Input.Subject" class="form-label"></label>
+            <input asp-for="Input.Subject" class="form-control" />
+            <span asp-validation-for="Input.Subject"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.Type" class="form-label"></label>
+            <select asp-for="Input.Type" class="form-select" asp-items="Lists.Of(Model.Input.Type)"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.DueAt" class="form-label"></label>
+            <input asp-for="Input.DueAt" class="form-control" type="datetime-local" />
+            <span asp-validation-for="Input.DueAt"></span>
+        </div>
+        @if (Model.Owners.Count > 0)
+        {
+            <div class="col-md-6">
+                <label asp-for="Input.OwnerId" class="form-label"></label>
+                <select asp-for="Input.OwnerId" class="form-select" asp-items="Lists.Of(Model.Owners, Model.Input.OwnerId)"></select>
+                <span asp-validation-for="Input.OwnerId"></span>
+            </div>
+        }
+        <div class="col-12">
+            <label asp-for="Input.Remarks" class="form-label"></label>
+            <textarea asp-for="Input.Remarks" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-primary">Save</button>
+        <a class="btn btn-link" href="@(Model.Id == null ? "/FollowUps" : $"/FollowUps/Details/{Model.Id}")">Cancel</a>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

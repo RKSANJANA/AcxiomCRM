@@ -1,0 +1,81 @@
+@page "{id:int?}"
+@model Acxiom.Web.Pages.Opportunities.EditModel
+@{ ViewData["Title"] = Model.Id == null ? "New opportunity" : "Edit opportunity"; }
+
+<h1>@ViewData["Title"]</h1>
+<form method="post" class="panel" novalidate>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+    <div class="row g-3">
+        <div class="col-md-7">
+            <label asp-for="Input.Name" class="form-label"></label>
+            <input asp-for="Input.Name" class="form-control" />
+            <span asp-validation-for="Input.Name"></span>
+        </div>
+        <div class="col-md-5">
+            <label asp-for="Input.CustomerId" class="form-label"></label>
+            <select asp-for="Input.CustomerId" class="form-select" asp-items="Lists.Of(Model.Customers, Model.Input.CustomerId)">
+                <option value="">Choose…</option>
+            </select>
+            <span asp-validation-for="Input.CustomerId"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Amount" class="form-label"></label>
+            <input asp-for="Input.Amount" class="form-control" type="text" inputmode="decimal" />
+            <span asp-validation-for="Input.Amount"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Probability" class="form-label"></label>
+            <input asp-for="Input.Probability" class="form-control" type="text" inputmode="numeric" />
+            <span asp-validation-for="Input.Probability"></span>
+            <div class="form-text" id="weighted"></div>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Stage" class="form-label"></label>
+            <select asp-for="Input.Stage" class="form-select" asp-items="Lists.Of(Model.Input.Stage, Model.StageChoices)"></select>
+            <span asp-validation-for="Input.Stage"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.ExpectedCloseDate" class="form-label"></label>
+            <input asp-for="Input.ExpectedCloseDate" class="form-control" />
+            <span asp-validation-for="Input.ExpectedCloseDate"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.Source" class="form-label"></label>
+            <select asp-for="Input.Source" class="form-select" asp-items="Lists.Of(Model.Input.Source)"><option value="">-</option></select>
+        </div>
+        @if (Model.Owners.Count > 0)
+        {
+            <div class="col-md-4">
+                <label asp-for="Input.OwnerId" class="form-label"></label>
+                <select asp-for="Input.OwnerId" class="form-select" asp-items="Lists.Of(Model.Owners, Model.Input.OwnerId)"></select>
+                <span asp-validation-for="Input.OwnerId"></span>
+            </div>
+        }
+        <div class="col-12">
+            <label asp-for="Input.Notes" class="form-label"></label>
+            <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+    @if (Model.Id != null)
+    {
+        <p class="small text-muted mt-3 mb-0">Picking Won or Lost closes the deal (probability becomes 100% or 0%) and it can't be edited after that.</p>
+    }
+    <div class="mt-4">
+        <button class="btn btn-primary">Save</button>
+        <a class="btn btn-link" href="@(Model.Id == null ? "/Opportunities" : $"/Opportunities/Details/{Model.Id}")">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const amt = document.getElementById('Input_Amount'), prob = document.getElementById('Input_Probability'), out = document.getElementById('weighted');
+        function showWeighted() {
+            const a = parseFloat(amt.value), p = parseInt(prob.value);
+            out.textContent = isNaN(a) || isNaN(p) ? '' : 'Weighted: ₹' + Math.round(a * p / 100).toLocaleString('en-IN');
+        }
+        amt.addEventListener('input', showWeighted); prob.addEventListener('input', showWeighted); showWeighted();
+        // re-check the close date when the stage changes (Won/Lost skip the rule)
+        document.getElementById('Input_Stage').addEventListener('change', () => $('#Input_ExpectedCloseDate').valid());
+    </script>
+}
